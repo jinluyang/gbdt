@@ -52,7 +52,7 @@ void scan(
     std::vector<Location> const &locations,
     std::vector<Meta> const &metas0,
     std::vector<Defender> &defenders,
-    uint32_t const offset,uint32_t const first,
+    uint32_t const offset,//uint32_t const first,
     bool  forward)
 {   //nr_field字段数，nr_instance样本数
     uint32_t const nr_field = prob.nr_field;
