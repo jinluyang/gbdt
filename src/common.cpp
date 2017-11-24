@@ -30,7 +30,7 @@ uint32_t get_nr_line(std::string const &path)
 }
 
 //获取字段个数
-uint32_t get_nr_field(std::string const &path)
+uint32_t get_nr_field(std::string const &path)//TODO replace
 {
     FILE *f = open_c_file(path.c_str(), "r");
     char line[kMaxLineSize];

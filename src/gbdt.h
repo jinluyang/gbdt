@@ -30,7 +30,7 @@ public:
 private:
     static std::mutex mtx;
     static bool verbose;
-    std::vector<TreeNode> tnodes;
+    std::vector<TreeNode> tnodes;//treenodes
 };
 
 //ÒÔCART×÷Îªboosting tree
