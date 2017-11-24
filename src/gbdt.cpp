@@ -102,7 +102,7 @@ void scan(
         }
     }
 }
-
+/*
 void scan_sparse(
     Problem const &prob,
     std::vector<Location> const &locations,
@@ -149,7 +149,7 @@ void scan_sparse(
             }
         }
     }
-}
+}*/
 
 } //unnamed namespace
 
@@ -162,7 +162,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
     std::vector<float> &F1)
 {
     uint32_t const nr_field = prob.nr_field;
-    uint32_t const nr_sparse_field = prob.nr_sparse_field;
+//    uint32_t const nr_sparse_field = prob.nr_sparse_field;
     uint32_t const nr_instance = prob.nr_instance;
 
     //记录样本的位置
@@ -192,7 +192,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
 
         //每层节点数*字段数
         std::vector<Defender> defenders(nr_leaf*nr_field);
-        std::vector<Defender> defenders_sparse(nr_leaf*nr_sparse_field);
+//        std::vector<Defender> defenders_sparse(nr_leaf*nr_sparse_field);
         for(uint32_t f = 0; f < nr_leaf; ++f)
         {
             Meta const &meta = metas0[f];

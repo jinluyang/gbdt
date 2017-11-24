@@ -17,7 +17,7 @@ struct Option
 std::string train_help()
 {
     return std::string(
-"usage: gbdt [<options>] <dense_validation_path> <sparse_validation_path> <dense_train_path> <sparse_train_path> <validation_output_path> <train_output_path>\n"
+"usage: gbdt [<options>] <dense_validation_path>  <dense_train_path> <validation_output_path> <train_output_path>\n"
 "\n"
 "options:\n"
 "-d <depth>: set the maximum depth of a tree\n"
@@ -61,13 +61,13 @@ Option parse_option(std::vector<std::string> const &args)
         }
     }
 
-    if(i != argc-6)
+    if(i != argc-4)
         throw std::invalid_argument("invalid command");
 
     opt.Va_path = args[i++];
-    opt.VaS_path = args[i++];
+//    opt.VaS_path = args[i++];
     opt.Tr_path = args[i++];
-    opt.TrS_path = args[i++];
+//    opt.TrS_path = args[i++];
     opt.Va_out_path = args[i++];
     opt.Tr_out_path = args[i++];
 
@@ -108,8 +108,8 @@ int main(int const argc, char const * const * const argv)
     }
 
     std::cout << "reading data..." << std::flush;
-    Problem const Tr = read_data(opt.Tr_path, opt.TrS_path);
-    Problem const Va = read_data(opt.Va_path, opt.VaS_path);
+    Problem const Tr = read_data(opt.Tr_path);
+    Problem const Va = read_data(opt.Va_path );
     std::cout << "done\n" << std::flush;
 
 	omp_set_num_threads(static_cast<int>(opt.nr_thread));
