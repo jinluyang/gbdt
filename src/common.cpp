@@ -100,7 +100,7 @@ void sort_problem(Problem &prob)
             Z1[X1[i].i] = Node(i, X1[i].v);
     }
 }
-
+/*
 void read_sparse(Problem &prob, std::string const &path)
 {
     char line[kMaxLineSize];
@@ -151,17 +151,17 @@ void read_sparse(Problem &prob, std::string const &path)
     fclose(f);
 
     sort_problem(prob);
-}
+}*/
 
 } //unamed namespace
 
-Problem read_data(std::string const &dense_path, std::string const &sparse_path)
+Problem read_data(std::string const &dense_path)
 {
     Problem prob(get_nr_line(dense_path), get_nr_field(dense_path));
 
     read_dense(prob, dense_path);
 
-    read_sparse(prob, sparse_path);
+//    read_sparse(prob, sparse_path);
 
     return prob;
 }

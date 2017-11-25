@@ -1,3 +1,4 @@
+#include <iostream>
 #include <limits>
 #include <numeric>
 #include <algorithm>
@@ -17,8 +18,11 @@ namespace {
 //计算bias，公式在17行
 float calc_bias(std::vector<float> const &Y)
 {
+        std::cout << "ybar" << std::endl;
     double y_bar = std::accumulate(Y.begin(), Y.end(), 0.0);
+        std::cout << y_bar << std::endl;
     y_bar /= static_cast<double>(Y.size());
+        std::cout << y_bar << std::endl;
     return static_cast<float>(log((1.0+y_bar)/(1.0-y_bar)));
 }
 
@@ -199,8 +203,8 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
             double const ese = meta.s*meta.s/static_cast<double>(meta.n);
             for(uint32_t j = 0; j < nr_field; ++j)
                 defenders[f*nr_field+j].ese = ese;
-            for(uint32_t j = 0; j < nr_sparse_field; ++j)
-                defenders_sparse[f*nr_sparse_field+j].ese = ese;
+//            for(uint32_t j = 0; j < nr_sparse_field; ++j)
+//                defenders_sparse[f*nr_sparse_field+j].ese = ese;
         }
         std::vector<Defender> defenders_inv = defenders;
 
@@ -208,7 +212,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
             std::ref(metas0), std::ref(defenders), offset, true);
         std::thread thread_b(scan, std::ref(prob), std::ref(locations),
             std::ref(metas0), std::ref(defenders_inv), offset, false);
-        scan_sparse(prob, locations, metas0, defenders_sparse, offset, true);
+//        scan_sparse(prob, locations, metas0, defenders_sparse, offset, true);
         thread_f.join();
         thread_b.join();
 
@@ -237,16 +241,16 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
                     tnode.threshold = defender.threshold;
                 }
             }
-            for(uint32_t j = 0; j < nr_sparse_field; ++j)
-            {
-                Defender defender = defenders_sparse[f*nr_sparse_field+j];
-                if(defender.ese > best_ese)
-                {
-                    best_ese = defender.ese;
-                    tnode.feature = nr_field + j;
-                    tnode.threshold = defender.threshold;
-                }
-            }
+//            for(uint32_t j = 0; j < nr_sparse_field; ++j)
+//            {
+//                Defender defender = defenders_sparse[f*nr_sparse_field+j];
+//                if(defender.ese > best_ese)
+//                {
+//                    best_ese = defender.ese;
+//                    tnode.feature = nr_field + j;
+//                    tnode.threshold = defender.threshold;
+//                }
+//            }
         }
         //将样本分配到节点中
         #pragma omp parallel for schedule(static)
@@ -341,6 +345,7 @@ std::pair<uint32_t, float> CART::predict(float const * const x) const
 void GBDT::fit(Problem const &Tr, Problem const &Va)
 {
     bias = calc_bias(Tr.Y);
+//        std::cout << bias << std::endl;
 
     std::vector<float> F_Tr(Tr.nr_instance, bias), F_Va(Va.nr_instance, bias);
 
@@ -370,20 +375,24 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
             Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));
         }
         Tr_loss /= static_cast<double>(Tr.nr_instance);
+        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
 
         #pragma omp parallel for schedule(static)
         for(uint32_t i = 0; i < Va.nr_instance; ++i)
         {
             std::vector<float> x = construct_instance(Va, i);
+        std::cout << i << std::endl;
             F_Va[i] += trees[t].predict(x.data()).second;
         }
 
         double Va_loss = 0;
+        std::cout << F_Va[0] << std::endl;
         #pragma omp parallel for schedule(static) reduction(+: Va_loss)
         //validation误差
         for(uint32_t i = 0; i < Va.nr_instance; ++i)
             Va_loss += log(1+exp(-Va.Y[i]*F_Va[i]));
         Va_loss /= static_cast<double>(Va.nr_instance);
+        std::cout << Va_loss << std::endl;
 
         printf("%4d %8.1f %10.5f %10.5f\n", t, timer.toc(), Tr_loss, Va_loss);
         fflush(stdout);

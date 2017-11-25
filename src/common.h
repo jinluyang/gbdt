@@ -1,4 +1,5 @@
 #pragma GCC diagnostic ignored "-Wunused-result"
+#include <iostream>
 
 #ifndef _COMMON_H_
 #define _COMMON_H_
@@ -24,14 +25,14 @@ struct Node
 //输入样本： 样本数，字段数，稀疏字段数
 struct Problem
 {
-    Problem() : nr_instance(0), nr_field(0), nr_sparse_field(0) {}
+    Problem() : nr_instance(0), nr_field(0){}
     Problem(uint32_t const nr_instance, uint32_t const nr_field)
-        : nr_instance(nr_instance), nr_field(nr_field), nr_sparse_field(0),
+        : nr_instance(nr_instance), nr_field(nr_field),// nr_sparse_field(0),
           X(nr_field, std::vector<Node>(nr_instance)),
           Z(nr_field, std::vector<Node>(nr_instance)),
           Y(nr_instance) {}
     uint32_t const nr_instance, nr_field;
-    uint32_t nr_sparse_field;
+//    uint32_t nr_sparse_field;
     std::vector<std::vector<Node>> X, Z;
     //SI存放稀疏数据，SJ存放稀疏数据下标
     std::vector<uint32_t> SI, SJ;
@@ -43,21 +44,25 @@ inline std::vector<float>
 construct_instance(Problem const &prob, uint32_t const i)
 {
     uint32_t const nr_field = prob.nr_field;
-    uint32_t const nr_sparse_field = prob.nr_sparse_field;
+//    uint32_t const nr_sparse_field = prob.nr_sparse_field;
     std::vector<uint32_t> const &SJ = prob.SJ;
     std::vector<uint64_t> const &SJP = prob.SJP;
 
-    std::vector<float> x(nr_field+nr_sparse_field, 0);
+    std::vector<float> x(nr_field, 0);
     for(uint32_t j = 0; j < prob.nr_field; ++j)
         x[j] = prob.Z[j][i].v;
+    std::cout << "here"<< std::endl;
+    std::cout << SJP[i] << std::endl;
     for(uint64_t p = SJP[i]; p < SJP[i+1]; ++p)
+    {
         x[SJ[p]+nr_field] = 1;
-
+        std::cout << p << std::endl;
+    }
+    std::cout << "here"<< std::endl;
     return x;
 }
 
-Problem read_data(std::string const &dense_path,
-    std::string const &sparse_path);
+Problem read_data(std::string const &dense_path);
 
 FILE *open_c_file(std::string const &path, std::string const &mode);
 
