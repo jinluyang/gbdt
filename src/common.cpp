@@ -3,7 +3,7 @@
 #include <cassert>
 #include <algorithm>
 #include <omp.h>
-
+#include <iostream>
 #include "common.h"
 
 namespace {
@@ -67,11 +67,14 @@ void read_dense(Problem &prob, std::string const &path)
     {
         char *p = strtok(line, " \t");
         prob.Y[i] = (atoi(p)>0)? 1.0f : -1.0f;
+		std::cout<< "prob.nrfield "<< prob.nr_field <<std::endl;
+		std::cout << "Yi" << prob.Y[i] << std::endl;
         for(uint32_t j = 0; j < prob.nr_field; ++j)
         {
             char *val_char = strtok(nullptr," \t");
 
             float const val = static_cast<float>(atof(val_char));
+			std::cout << val << ',';
 
             prob.X[j][i] = Node(i, val);
         }
@@ -89,6 +92,7 @@ void sort_problem(Problem &prob)
             return lhs.v < rhs.v;
         }
     };
+	std::cout << "sort_problem" <<  std::endl;
 
     #pragma omp parallel for schedule(static)
     for(uint32_t j = 0; j < prob.nr_field; ++j)
@@ -138,8 +142,21 @@ void read_sparse(Problem &prob, std::string const &path)
     prob.SI.resize(nnz);
     prob.SIP.resize(prob.nr_sparse_field+1);
     prob.SIP[0] = 0;
-
+	std::cout << "in read sparse" <<std::endl;
+	std::cout << "SI:" << std::endl;
+	for (int k=0;k<prob.SI.size();k++)
+	  std::cout << prob.SI[k] << ',';
+    std::cout << std::endl << "SJ" <<std::endl;
+	for (int k=0;k<prob.SJ.size();k++)
+	  std::cout << prob.SJ[k] << ',';
+    std::cout << std::endl << "SIP" << std::endl;
+  	for (int k=0;k<prob.SIP.size();k++)
+	  std::cout << prob.SIP[k] << ',';
+    std::cout << std::endl << "SIJ" << std::endl;
+  	for (int k=0;k<prob.SJP.size();k++)
+	  std::cout << prob.SJP[k] << ',';
     uint64_t p = 0;
+	std::cout << "prob.nr_sparse_field: " << prob.nr_sparse_field <<std::endl;
     for(uint32_t j = 0; j < prob.nr_sparse_field; ++j)
     {
     //C++11标准的语法中，auto被定义为自动推断变量的类型
@@ -157,7 +174,7 @@ void read_sparse(Problem &prob, std::string const &path)
 
 Problem read_data(std::string const &dense_path, std::string const &sparse_path)
 {
-    Problem prob(get_nr_line(dense_path), get_nr_field(dense_path));
+    Problem prob(get_nr_line(dense_path), get_nr_field(dense_path));//TODO
 
     read_dense(prob, dense_path);
 
