@@ -51,14 +51,14 @@ construct_instance(Problem const &prob, uint32_t const i)
     std::vector<float> x(nr_field, 0);
     for(uint32_t j = 0; j < prob.nr_field; ++j)
         x[j] = prob.Z[j][i].v;
-    std::cout << "here"<< std::endl;
-    std::cout << SJP[i] << std::endl;
-    for(uint64_t p = SJP[i]; p < SJP[i+1]; ++p)
-    {
-        x[SJ[p]+nr_field] = 1;
-        std::cout << p << std::endl;
-    }
-    std::cout << "here"<< std::endl;
+//    std::cout << "here"<< std::endl;
+//    std::cout << SJP.size() << " " << i << std::endl;
+//    for(uint64_t p = SJP[i]; p < SJP[i+1]; ++p)
+//    {
+//        x[SJ[p]+nr_field] = 1;
+//        std::cout << p << std::endl;
+//    }
+//    std::cout << "here"<< std::endl;
     return x;
 }
 

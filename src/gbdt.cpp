@@ -18,11 +18,11 @@ namespace {
 //计算bias，公式在17行
 float calc_bias(std::vector<float> const &Y)
 {
-        std::cout << "ybar" << std::endl;
+//        std::cout << "ybar" << std::endl;
     double y_bar = std::accumulate(Y.begin(), Y.end(), 0.0);
-        std::cout << y_bar << std::endl;
+//        std::cout << y_bar << std::endl;
     y_bar /= static_cast<double>(Y.size());
-        std::cout << y_bar << std::endl;
+ //       std::cout << y_bar << std::endl;
     return static_cast<float>(log((1.0+y_bar)/(1.0-y_bar)));
 }
 
@@ -375,18 +375,18 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
             Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));
         }
         Tr_loss /= static_cast<double>(Tr.nr_instance);
-        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
+//        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
 
         #pragma omp parallel for schedule(static)
         for(uint32_t i = 0; i < Va.nr_instance; ++i)
         {
             std::vector<float> x = construct_instance(Va, i);
-        std::cout << i << std::endl;
+//        std::cout << i << std::endl;
             F_Va[i] += trees[t].predict(x.data()).second;
         }
 
         double Va_loss = 0;
-        std::cout << F_Va[0] << std::endl;
+ //       std::cout << F_Va[0] << std::endl;
         #pragma omp parallel for schedule(static) reduction(+: Va_loss)
         //validation误差
         for(uint32_t i = 0; i < Va.nr_instance; ++i)
