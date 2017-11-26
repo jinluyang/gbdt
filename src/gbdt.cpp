@@ -34,7 +34,7 @@ struct Location
 
 struct Meta
 {
-    Meta() : sl(0), s(0), nl(0), n(0), v(0.0f/0.0f) {}
+    Meta() : sl(0), s(0), nl(0), n(0), v(0.0f/0.0f) {}//what ??
     double sl, s;
     uint32_t nl, n;
     float v;
@@ -82,8 +82,8 @@ void scan(
                 uint32_t const nr = meta.n - meta.nl;
                 //当前节点误差=左子树均方误差+右子树均方误差
                 double const current_ese =
-                    (meta.sl*meta.sl)/static_cast<double>(meta.nl) +
-                    (sr*sr)/static_cast<double>(nr);
+                    (meta.sl*meta.sl)/static_cast<double>(meta.nl) +//left
+                    (sr*sr)/static_cast<double>(nr);//right
 
                 Defender &defender = defenders[f*nr_field+j];
                 double &best_ese = defender.ese;
@@ -402,9 +402,9 @@ float GBDT::predict(float const * const x) const
 std::vector<uint32_t> GBDT::get_indices(float const * const x) const
 {
     uint32_t const nr_tree = static_cast<uint32_t>(trees.size());
-
+    std::cout << "treesize " <<trees.size() <<std::endl;
     std::vector<uint32_t> indices(nr_tree);
     for(uint32_t t = 0; t < nr_tree; ++t)
-        indices[t] = trees[t].predict(x).first;
+        indices[t] = trees[t].predict(x).first;//每棵树的预测结果的残差(jly)
     return indices;
 }

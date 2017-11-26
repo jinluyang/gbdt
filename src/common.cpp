@@ -66,7 +66,7 @@ void read_dense(Problem &prob, std::string const &path)
     for(uint32_t i = 0; fgets(line, kMaxLineSize, f) != nullptr; ++i)
     {
         char *p = strtok(line, " \t");
-        prob.Y[i] = (atoi(p)>0)? 1.0f : -1.0f;
+        prob.Y[i] = (atoi(p)>0)? 1.0f : -1.0f;//大于0的为1，小于等于0的为-1
 		std::cout<< "prob.nrfield "<< prob.nr_field <<std::endl;
 		std::cout << "Yi" << prob.Y[i] << std::endl;
         for(uint32_t j = 0; j < prob.nr_field; ++j)
@@ -152,7 +152,7 @@ void read_sparse(Problem &prob, std::string const &path)
     std::cout << std::endl << "SIP" << std::endl;
   	for (int k=0;k<prob.SIP.size();k++)
 	  std::cout << prob.SIP[k] << ',';
-    std::cout << std::endl << "SIJ" << std::endl;
+    std::cout << std::endl << "SJP" << std::endl;
   	for (int k=0;k<prob.SJP.size();k++)
 	  std::cout << prob.SJP[k] << ',';
     uint64_t p = 0;

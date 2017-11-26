@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include <pmmintrin.h>
+#include <iostream>
 
 //树的节点，i为index， v为value
 struct Node
@@ -46,13 +47,14 @@ construct_instance(Problem const &prob, uint32_t const i)
     uint32_t const nr_sparse_field = prob.nr_sparse_field;
     std::vector<uint32_t> const &SJ = prob.SJ;
     std::vector<uint64_t> const &SJP = prob.SJP;
+//	std::cout << "construct instance" << std::endl;
 
     std::vector<float> x(nr_field+nr_sparse_field, 0);
     for(uint32_t j = 0; j < prob.nr_field; ++j)
         x[j] = prob.Z[j][i].v;
     for(uint64_t p = SJP[i]; p < SJP[i+1]; ++p)
         x[SJ[p]+nr_field] = 1;
-
+//    std::cout <<x[0] <<',' << x[1] <<std::endl;
     return x;
 }
 
