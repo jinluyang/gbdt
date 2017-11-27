@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Wconversion -O2 -fPIC -std=c++0x -march=native -fopenmp
+CXXFLAGS = -Wall -Wconversion  -fPIC -std=c++0x -march=native -fopenmp
 MAIN = gbdt
 FILES = common.cpp timer.cpp gbdt.cpp
 SRCS = $(FILES:%.cpp=src/%.cpp)
