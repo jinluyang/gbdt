@@ -12,9 +12,10 @@
 #include <cmath>
 
 #include <pmmintrin.h>
+#include <iostream>
 
 //树的节点，i为index， v为value
-struct Node
+struct Node//has i and v
 {
     Node() : i(0), v(0) {}
     Node(uint32_t const i, float const v) : i(i), v(v) {}
@@ -28,9 +29,9 @@ struct Problem
     Problem() : nr_instance(0), nr_field(0){}
     Problem(uint32_t const nr_instance, uint32_t const nr_field)
         : nr_instance(nr_instance), nr_field(nr_field),// nr_sparse_field(0),
-          X(nr_field, std::vector<Node>(nr_instance)),
+          X(nr_field, std::vector<Node>(nr_instance)),//nr_field x nr_instance
           Z(nr_field, std::vector<Node>(nr_instance)),
-          Y(nr_instance) {}
+          Y(nr_instance) {}//label
     uint32_t const nr_instance, nr_field;
 //    uint32_t nr_sparse_field;
     std::vector<std::vector<Node>> X, Z;
@@ -47,6 +48,7 @@ construct_instance(Problem const &prob, uint32_t const i)
 //    uint32_t const nr_sparse_field = prob.nr_sparse_field;
     std::vector<uint32_t> const &SJ = prob.SJ;
     std::vector<uint64_t> const &SJP = prob.SJP;
+//	std::cout << "construct instance" << std::endl;
 
     std::vector<float> x(nr_field, 0);
     for(uint32_t j = 0; j < prob.nr_field; ++j)
