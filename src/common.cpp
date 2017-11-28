@@ -59,6 +59,7 @@ uint32_t get_nr_field(std::string const &path)//TODO replace
 //读取稠密数据
 //不清楚为何需要分开读取
 void read_dense(Problem &prob, std::string const &path)
+        //read data into problem X and Y
 {
     char line[kMaxLineSize];
 
@@ -97,11 +98,15 @@ void sort_problem(Problem &prob)
     #pragma omp parallel for schedule(static)
     for(uint32_t j = 0; j < prob.nr_field; ++j)
     {
-        std::vector<Node> &X1 = prob.X[j];
+        std::vector<Node> &X1 = prob.X[j];//each field
         std::vector<Node> &Z1 = prob.Z[j];
-        std::sort(X1.begin(), X1.end(), sort_by_v());
+        std::sort(X1.begin(), X1.end(), sort_by_v());//靠靠
         for(uint32_t i = 0; i < prob.nr_instance; ++i)
+        {
             Z1[X1[i].i] = Node(i, X1[i].v);
+            std::cout <<i<< ":" << X1[i].v << " " << X1[i].i << std::endl;
+        }
+        
     }
 }
 
@@ -167,7 +172,27 @@ void read_sparse(Problem &prob, std::string const &path)
 
     fclose(f);
 
-    sort_problem(prob);
+    sort_problem(prob);//sort X by value after copying it to Z
+    //prob XZ
+    std::cout <<"porb.X"<< std::endl;
+    for (int i =0 ;i<prob.X.size();i++)
+    {
+            for (int j=0; j< prob.X[0].size();j++)
+            {
+                std::cout << prob.X[i][j].v<<",";
+            }
+            std::cout << std::endl;
+    }
+    std::cout <<"porb.Z"<< std::endl;
+    for (int i =0 ;i<prob.Z.size();i++)
+    {
+            for (int j=0; j< prob.Z[0].size();j++)
+            {
+                std::cout << prob.Z[i][j].v<<",";
+            }
+            std::cout << std::endl;
+    }
+
 }
 
 } //unamed namespace
