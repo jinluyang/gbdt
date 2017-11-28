@@ -160,6 +160,7 @@ Problem read_data(std::string const &dense_path)
     Problem prob(get_nr_line(dense_path), get_nr_field(dense_path));
 
     read_dense(prob, dense_path);
+    sort_problem(prob);
 
 //    read_sparse(prob, sparse_path);
 
