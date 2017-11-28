@@ -1,3 +1,8 @@
+### here
+ sparse data is categorical data, not necessary
+we have to modify the code to do classification, and for multiclass
+by jinluyang
+
 Data Format
 ===========
 The input of this GBDT solver consists of a label vector (y), a dense matrix
