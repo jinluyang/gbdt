@@ -35,7 +35,7 @@ struct Location
     float r;
     bool shrinked;
 };
-
+//反正都是数字
 struct Meta
 {
     Meta() : sl(0), s(0), nl(0), n(0), v(0.0f/0.0f) {}//what ??
@@ -158,7 +158,7 @@ void scan_sparse(
 } //unnamed namespace
 
 uint32_t CART::max_depth = 7;
-uint32_t CART::max_tnodes = static_cast<uint32_t>(pow(2, CART::max_depth+1));
+uint32_t CART::max_tnodes = static_cast<uint32_t>(pow(2, CART::max_depth+1));//完全二叉树节点数
 std::mutex CART::mtx;
 bool CART::verbose = false;
 
@@ -181,18 +181,22 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
         //每层的节点数为2^d
         uint32_t const nr_leaf = static_cast<uint32_t>(pow(2, d));
         std::vector<Meta> metas0(nr_leaf);
-
+		std::cout << "===========CART fit"<< std::endl;
+		std::cout << " metas0[0].s=" <<metas0[0].s <<" metas0[1].s=" <<metas0[1].s <<" metas0[2].s="<< metas0[2].s<< std::endl;
         for(uint32_t i = 0; i < nr_instance; ++i)
         {
             Location &location = locations[i];
-            if(location.shrinked)
+            if(location.shrinked)//initially false
                 continue;
             //每个节点距离本层首节点的偏移
-            Meta &meta = metas0[location.tnode_idx-offset];
+            Meta &meta = metas0[location.tnode_idx-offset];//initially offset=1, tnode_idx=1
             //累加残差，为后面的计算公式做准备
             meta.s += location.r;
             ++meta.n;
+			std::cout << location.tnode_idx << " " <<offset << std::endl;
         }
+
+		std::cout << " metas0[0].s=" <<metas0[0].s <<" metas0[1].s=" <<metas0[1].s <<" metas0[2].s="<< metas0[2].s<< std::endl;//some not initialized
 
         //每层节点数*字段数
         std::vector<Defender> defenders(nr_leaf*nr_field);
@@ -201,6 +205,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
         {
             Meta const &meta = metas0[f];
             double const ese = meta.s*meta.s/static_cast<double>(meta.n);
+			std::cout << "ese:" << ese <<std::endl;
             for(uint32_t j = 0; j < nr_field; ++j)
                 defenders[f*nr_field+j].ese = ese;
 //            for(uint32_t j = 0; j < nr_sparse_field; ++j)
@@ -345,9 +350,10 @@ std::pair<uint32_t, float> CART::predict(float const * const x) const
 void GBDT::fit(Problem const &Tr, Problem const &Va)
 {
     bias = calc_bias(Tr.Y);
-//        std::cout << bias << std::endl;
+    std::cout << "bias:" << bias << std::endl;
 
     std::vector<float> F_Tr(Tr.nr_instance, bias), F_Va(Va.nr_instance, bias);
+    std::cout << F_Tr[0]<< std::endl;
 
     Timer timer;
     printf("iter     time    tr_loss    va_loss\n");
