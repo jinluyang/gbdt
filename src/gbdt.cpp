@@ -57,7 +57,7 @@ void scan(
     std::vector<Meta> const &metas0,
     std::vector<Defender> &defenders,
     uint32_t const offset,// first
-    bool const forward)
+    bool const forward)//从前往后 还是从后往前
 {   //nr_field字段数，nr_instance样本数
     uint32_t const nr_field = prob.nr_field;
     uint32_t const nr_instance = prob.nr_instance;
@@ -93,8 +93,8 @@ void scan(
                 double &best_ese = defender.ese;
                 if(current_ese > best_ese)
                 {
-                    best_ese = current_ese;
-                    defender.threshold = forward? dnode.v : meta.v;
+                    best_ese = current_ese;//not used?
+                    defender.threshold = forward? dnode.v : meta.v;//result in defender
                 }
                 if(i_bar > nr_instance/2)
                     break;
@@ -191,8 +191,8 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
             //每个节点距离本层首节点的偏移
             Meta &meta = metas0[location.tnode_idx-offset];//initially offset=1, tnode_idx=1
             //累加残差，为后面的计算公式做准备
-            meta.s += location.r;
-            ++meta.n;
+            meta.s += location.r;//initially R[i]
+            ++meta.n;//与之前的值累加
 			std::cout << location.tnode_idx << " " <<offset << std::endl;
         }
 
@@ -225,7 +225,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
         for(uint32_t f = 0; f < nr_leaf; ++f)
         {
             Meta const &meta = metas0[f];
-            double best_ese = meta.s*meta.s/static_cast<double>(meta.n);
+            double best_ese = meta.s*meta.s/static_cast<double>(meta.n);//只是初始值，下面取defender中的best
             TreeNode &tnode = tnodes[f+offset];
             //计算每个字段的最佳分裂属性和分裂值
             for(uint32_t j = 0; j < nr_field; ++j)
@@ -281,7 +281,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
                     tnode_idx = 2*tnode_idx+1;
             }
             //稀疏字段
-            else
+/*            else
             {
                 uint32_t const target_feature
                     = static_cast<uint32_t>(tnode.feature-nr_field);
@@ -298,7 +298,9 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
                     tnode_idx = 2*tnode_idx;
                 else
                     tnode_idx = 2*tnode_idx+1;
-            }
+            }*/
+			std::cout << "locations.tnode_idx:" <<location.tnode_idx << std::endl;
+
         }
     }
 
@@ -361,7 +363,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
     {
         timer.tic();
 
-        std::vector<float> const &Y = Tr.Y;
+        std::vector<float> const &Y = Tr.Y;//in the loop ?
         std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
 
         #pragma omp parallel for schedule(static)
