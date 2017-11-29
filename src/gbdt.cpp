@@ -333,7 +333,8 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
 //预测样本，并分到左右节点
 std::pair<uint32_t, float> CART::predict(float const * const x) const
 {
-    uint32_t tnode_idx = 1;
+    uint32_t tnode_idx = 1;//start from root node
+//    std::cout << "in CART::predict:" << max_depth << std::endl;//4
     for(uint32_t d = 0; d <= max_depth; ++d)
     {
         TreeNode const &tnode = tnodes[tnode_idx];
@@ -347,6 +348,14 @@ std::pair<uint32_t, float> CART::predict(float const * const x) const
     }
 
     return std::make_pair(-1, -1);
+}
+void CART::print_tree()
+{
+        std::cout << "print CART" << std::endl;
+    for(int i=1 ; i<=max_tnodes;++i)
+        std::cout << "idx:"<<tnodes[i].idx <<
+                "gamma:" << tnodes[i].gamma << 
+                "threshold" << tnodes[i].threshold <<std::endl;
 }
 
 void GBDT::fit(Problem const &Tr, Problem const &Va)
@@ -372,6 +381,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
             R[i] = static_cast<float>(Y[i]/(1+exp(Y[i]*F_Tr[i])));
 
         trees[t].fit(Tr, R, F1);
+        trees[t].print_tree();
 
         double Tr_loss = 0;
         #pragma omp parallel for schedule(static) reduction(+: Tr_loss)
@@ -408,7 +418,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 }
 
 float GBDT::predict(float const * const x) const
-{
+{ //not used
     float s = bias;
     for(auto &tree : trees)
         s += tree.predict(x).second;

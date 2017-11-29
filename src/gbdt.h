@@ -24,6 +24,7 @@ public:
     void fit(Problem const &prob, std::vector<float> const &R,
         std::vector<float> &F1);
     std::pair<uint32_t, float> predict(float const * const x) const;
+    void print_tree();
 
     static uint32_t max_depth, max_tnodes;
 

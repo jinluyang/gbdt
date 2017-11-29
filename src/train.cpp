@@ -82,6 +82,8 @@ void write(Problem const &prob, GBDT const &gbdt, std::string const &path)
     {
         std::vector<float> x = construct_instance(prob, i);
         std::vector<uint32_t> indices = gbdt.get_indices(x.data());
+//    float tmp = gbdt.predict(x.data());
+//    std::cout << tmp << std::endl;
 
         fprintf(f, "%d", static_cast<int>(prob.Y[i]));
         for(uint32_t t = 0; t < indices.size(); ++t)
