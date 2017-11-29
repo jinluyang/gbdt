@@ -197,9 +197,9 @@ void read_sparse(Problem &prob, std::string const &path)
 
 } //unamed namespace
 
-Problem read_data(std::string const &dense_path, std::string const &sparse_path)
+Problem read_data(std::string const &dense_path, std::string const &sparse_path, int nr_field, int nr_instance)
 {
-    Problem prob(get_nr_line(dense_path), get_nr_field(dense_path));//TODO
+    Problem prob(nr_instance, nr_field);//TODO
 
     read_dense(prob, dense_path);
 

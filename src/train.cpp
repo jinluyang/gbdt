@@ -1,6 +1,6 @@
 #include <iostream>
 #include <omp.h>
-
+#include <sstream>
 #include "common.h"
 #include "timer.h"
 #include "gbdt.h"
@@ -11,18 +11,26 @@ struct Option
 {
     Option() : nr_tree(30), nr_thread(1) {}
     std::string Tr_path, TrS_path, Va_path, VaS_path, Va_out_path, Tr_out_path;
-    uint32_t nr_tree, nr_thread;
+    uint32_t nr_tree, nr_thread, nr_field, nr_instance;
 };
 
 std::string train_help()
 {
     return std::string(
-"usage: gbdt [<options>] <dense_validation_path> <sparse_validation_path> <dense_train_path> <sparse_train_path> <validation_output_path> <train_output_path>\n"
+"usage: gbdt [<options>] <dense_validation_path> <sparse_validation_path> <dense_train_path> <sparse_train_path> <validation_output_path> <train_output_path> <nr_field> <nr_instance>\n"
 "\n"
 "options:\n"
 "-d <depth>: set the maximum depth of a tree\n"
 "-s <nr_thread>: set the maximum number of threads\n"
-"-t <nr_tree>: set the number of trees\n");
+"-t <nr_tree>: set the number of trees\n"
+"     -r <Training data file>\n"
+"     -t <Testing data file >\n"
+"     -d <Number of attributes constructing a record>\n"
+"     -c <Number of classes>\n"
+"     -s <Number of training records in the training data file>\n"
+"     -m <Number of testing records in the testing data file>\n"
+"     -p <printing the prediction results or not, 1 or 0>\n"
+);
 }
 
 Option parse_option(std::vector<std::string> const &args)
@@ -39,14 +47,14 @@ Option parse_option(std::vector<std::string> const &args)
     {
         if(args[i].compare("-d") == 0)
         {
-            if(i == argc-1)
-                throw std::invalid_argument("invalid command");
+ //           if(i == argc-1)
+   //             throw std::invalid_argument("invalid command");
             CART::max_depth = std::stoi(args[++i]);
         }
         else if(args[i].compare("-t") == 0)
         {
-            if(i == argc-1)
-                throw std::invalid_argument("invalid command");
+//            if(i == argc-1)
+  //              throw std::invalid_argument("invalid command");
             opt.nr_tree = std::stoi(args[++i]);
         }
         else if(args[i].compare("-s") == 0)
@@ -55,13 +63,17 @@ Option parse_option(std::vector<std::string> const &args)
                 throw std::invalid_argument("invalid command");
             opt.nr_thread = std::stoi(args[++i]);
         }
+		else if(args[i].compare("-t") == 0)
+		{
+			
+		}
         else
         {
             break;
         }
     }
 
-    if(i != argc-6)
+    if(i != argc-8)
         throw std::invalid_argument("invalid command");
 
     opt.Va_path = args[i++];
@@ -70,6 +82,13 @@ Option parse_option(std::vector<std::string> const &args)
     opt.TrS_path = args[i++];
     opt.Va_out_path = args[i++];
     opt.Tr_out_path = args[i++];
+    std::stringstream ss;
+    ss << args[i++];
+    ss >> opt.nr_field;
+    ss << args[i++];
+    ss >> opt.nr_instance;
+//    opt.nr_field = atoi(args[i++]);
+//    opt.nr_instance = atoi(args[i++]);
 
     return opt;
 }
@@ -108,8 +127,8 @@ int main(int const argc, char const * const * const argv)
     }
 
     std::cout << "reading data..." << std::flush;
-    Problem const Tr = read_data(opt.Tr_path, opt.TrS_path);
-    Problem const Va = read_data(opt.Va_path, opt.VaS_path);
+    Problem const Tr = read_data(opt.Tr_path, opt.TrS_path, opt.nr_field, opt.nr_instance);
+    Problem const Va = read_data(opt.Va_path, opt.VaS_path, opt.nr_field, opt.nr_instance);
     std::cout << "done\n" << std::flush;
 
 	omp_set_num_threads(static_cast<int>(opt.nr_thread));
