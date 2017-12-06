@@ -88,6 +88,8 @@ void write(Problem const &prob, GBDT const &gbdt, std::string const &path)
         fprintf(f, "%d", static_cast<int>(prob.Y[i]));
         for(uint32_t t = 0; t < indices.size(); ++t)
             fprintf(f, " %d", indices[t]);
+        float pr = gbdt.get_result(x.data());
+        fprintf(f, " %f",pr);
         fprintf(f, "\n");
     }
 

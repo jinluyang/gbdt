@@ -42,6 +42,7 @@ public:
     void fit(Problem const &Tr, Problem const &Va);
     float predict(float const * const x) const;
     std::vector<uint32_t> get_indices(float const * const x) const;
+    float get_result(float const * const x) const;
 
 private:
     std::vector<CART> trees;

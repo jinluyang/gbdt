@@ -42,12 +42,12 @@ struct Problem
 };
 
 inline std::vector<float>
-construct_instance(Problem const &prob, uint32_t const i)
+construct_instance(Problem const &prob, uint32_t const i)//return x
 {
     uint32_t const nr_field = prob.nr_field;
 //    uint32_t const nr_sparse_field = prob.nr_sparse_field;
-    std::vector<uint32_t> const &SJ = prob.SJ;
-    std::vector<uint64_t> const &SJP = prob.SJP;
+//    std::vector<uint32_t> const &SJ = prob.SJ;
+//    std::vector<uint64_t> const &SJP = prob.SJP;
 //	std::cout << "construct instance" << std::endl;
 
     std::vector<float> x(nr_field, 0);

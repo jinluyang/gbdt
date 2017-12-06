@@ -323,6 +323,7 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
         double a, b;
         //first -> a, second -> b
         std::tie(a, b) = tmp[tnode_idx];
+		std::cout << "a="<<a<<" b=" <<b<<std::endl;
         tnodes[tnode_idx].gamma = (b <= 1e-12)? 0 : static_cast<float>(a/b);
     }
 
@@ -364,7 +365,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
     std::cout << "bias:" << bias << std::endl;
 
     std::vector<float> F_Tr(Tr.nr_instance, bias), F_Va(Va.nr_instance, bias);
-    std::cout << F_Tr[0]<< std::endl;
+//    std::cout << F_Tr[0]<< std::endl;
 
     Timer timer;
     printf("iter     time    tr_loss    va_loss\n");
@@ -378,7 +379,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
         #pragma omp parallel for schedule(static)
         //初始化残差，计算公式参考论文
         for(uint32_t i = 0; i < Tr.nr_instance; ++i)
-            R[i] = static_cast<float>(Y[i]/(1+exp(Y[i]*F_Tr[i])));
+            R[i] = static_cast<float>(2*Y[i]/(1+exp(2*Y[i]*F_Tr[i])));
 
         trees[t].fit(Tr, R, F1);
         trees[t].print_tree();
@@ -390,7 +391,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
         for(uint32_t i = 0; i < Tr.nr_instance; ++i)
         {
             F_Tr[i] += F1[i];
-            Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));
+            Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));//L(y,F)
         }
         Tr_loss /= static_cast<double>(Tr.nr_instance);
 //        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
@@ -418,10 +419,14 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 }
 
 float GBDT::predict(float const * const x) const
-{
+{ //not used
     float s = bias;
+    std::cout <<s<< std::endl;
     for(auto &tree : trees)
+    {
         s += tree.predict(x).second;
+        std::cout <<s<< std::endl;
+    }
     return s;
 }
 
@@ -433,5 +438,17 @@ std::vector<uint32_t> GBDT::get_indices(float const * const x) const
     std::vector<uint32_t> indices(nr_tree);
     for(uint32_t t = 0; t < nr_tree; ++t)
         indices[t] = trees[t].predict(x).first;//每棵树的预测结果的残差(jly)
+        //indices[t] = trees[t].predict(x).second;//每棵树的预测结果的残差(jly)
+        //indices[t] = GBDT::predict(x);//每棵树的预测结果的残差(jly)
     return indices;
+}
+float GBDT::get_result(float const * const  x) const
+{
+    float probability;
+    float s = GBDT::predict(x);
+    float Pr_1 = 1/(1+exp(-2*s));
+    float Pr_minus1 = 1/(1+exp(2*s));
+    
+    return Pr_1-Pr_minus1;
+
 }
