@@ -361,61 +361,108 @@ void CART::print_tree()
 
 void GBDT::fit(Problem const &Tr, Problem const &Va)
 {
-    bias = calc_bias(Tr.Y);
-    std::cout << "bias:" << bias << std::endl;
+    //bias = calc_bias(Tr.Y);
+    //std::cout << "bias:" << bias << std::endl;
 
-    std::vector<float> F_Tr(Tr.nr_instance, bias), F_Va(Va.nr_instance, bias);
+	int M = 5;
+	float all_time;
+
+	Timer timer;	
+	int K = 3;//nr_class;
+    std::vector<std::vector<float> > F_Tr(Tr.nr_instance, std::vector<float> (K,0)), F_Va(Va.nr_instance, std::vector<float> (K,0));
 //    std::cout << F_Tr[0]<< std::endl;
 
-    Timer timer;
-    printf("iter     time    tr_loss    va_loss\n");
-    for(uint32_t t = 0; t < trees.size(); ++t)
-    {
-        timer.tic();
-
-        std::vector<float> const &Y = Tr.Y;//in the loop ?
-        std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
-
-        #pragma omp parallel for schedule(static)
-        //初始化残差，计算公式参考论文
-        for(uint32_t i = 0; i < Tr.nr_instance; ++i)
-            R[i] = static_cast<float>(2*Y[i]/(1+exp(2*Y[i]*F_Tr[i])));
-
-        trees[t].fit(Tr, R, F1);
-        trees[t].print_tree();
-
-        double Tr_loss = 0;
-        #pragma omp parallel for schedule(static) reduction(+: Tr_loss)
-        //log loss
-        //Y为真实值，f_tr为训练值
-        for(uint32_t i = 0; i < Tr.nr_instance; ++i)
-        {
-            F_Tr[i] += F1[i];
-            Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));//L(y,F)
+	std::vector<std::vector<float> > Pr_train(Tr.nr_instance,std::vector<float>(K,0));
+	std::vector<std::vector<float> > Pr_val(Va.nr_instance,std::vector<float>(K,0));
+        std::vector<std::vector<float> > y_gradient(Tr.nr_instance, std::vector<float>(K)) ;//or say R ,residual
+        //std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
+        std::vector<std::vector<float> > /*R(Tr.nr_instance),*/ F1(Tr.nr_instance, std::vector<float>(K));
+        int k;
+	for (int m=1;m<M;m++)
+	{
+                
+                for(uint32_t i = 0; i < Tr.nr_instance; ++i)
+                {
+                        double sum = 0;
+		        for (k=0;k< K;k++)
+		        {
+                                sum +=exp(F_Tr[i][k]);
+                        }
+		        for (k=0;k< K;k++)
+            		    Pr_train[i][k] = exp(F_Tr[i][k])/sum;
+                        y_gradient[i][k] = Tr.Y[i] - Pr_train[i][k];
+                        std::cout << "y gradient=" << y_gradient[i][k] << std::endl;
+                }
+//                for(uint32_t i = 0; i < Va.nr_instance; ++i)
+//                {
+//                        float sum = 0;
+//		        for (k=0;k< K,k++)
+//		        {
+//                                sum +=exp(F_Va[i][k]);
+//                        }
+//		        for (k=0;k< K;k++)
+//            		    Pr_val = exp(F_Va[i][k])/sum;
+//                }
         }
-        Tr_loss /= static_cast<double>(Tr.nr_instance);
-//        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
+//                for (k=0;k<K;k++)
+//                {
+//                        for ()
+//                        y_gradient = Tr.Y - Pr_train[]
+//
+//                }
+// 
 
-        #pragma omp parallel for schedule(static)
-        for(uint32_t i = 0; i < Va.nr_instance; ++i)
-        {
-            std::vector<float> x = construct_instance(Va, i);
-//        std::cout << i << std::endl;
-            F_Va[i] += trees[t].predict(x.data()).second;
-        }
-
-        double Va_loss = 0;
- //       std::cout << F_Va[0] << std::endl;
-        #pragma omp parallel for schedule(static) reduction(+: Va_loss)
-        //validation误差
-        for(uint32_t i = 0; i < Va.nr_instance; ++i)
-            Va_loss += log(1+exp(-Va.Y[i]*F_Va[i]));
-        Va_loss /= static_cast<double>(Va.nr_instance);
-        std::cout << Va_loss << std::endl;
-
-        printf("%4d %8.1f %10.5f %10.5f\n", t, timer.toc(), Tr_loss, Va_loss);
-        fflush(stdout);
-    }
+//                for (k=0;k<K;k++)
+//                {
+//                printf("iter     time    tr_loss    va_loss\n");
+//                for(uint32_t t = 0; t < trees.size(); ++t)
+//                {
+//                    timer.tic();
+//            
+//                    std::vector<float> const &Y = Tr.Y;//in the loop ?
+//                    std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
+//            
+//                    #pragma omp parallel for schedule(static)
+//                    //初始化残差，计算公式参考论文
+//                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
+//                        R[i] = static_cast<float>(2*Y[i]/(1+exp(2*Y[i]*F_Tr[i])));
+//            
+//                    trees[t].fit(Tr, R, F1);
+//                    trees[t].print_tree();
+//            
+//                    double Tr_loss = 0;
+//                    #pragma omp parallel for schedule(static) reduction(+: Tr_loss)
+//                    //log loss
+//                    //Y为真实值，f_tr为训练值
+//                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
+//                    {
+//                        F_Tr[i] += F_Tr + F1[i];//edit
+//                        Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));//L(y,F)
+//                    }
+//                    Tr_loss /= static_cast<double>(Tr.nr_instance);
+//            //        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
+//            
+//                    #pragma omp parallel for schedule(static)
+//                    for(uint32_t i = 0; i < Va.nr_instance; ++i)
+//                    {
+//                        std::vector<float> x = construct_instance(Va, i);
+//            //        std::cout << i << std::endl;
+//                        F_Va[i] += trees[t].predict(x.data()).second;
+//                    }
+//            
+//                    double Va_loss = 0;
+//             //       std::cout << F_Va[0] << std::endl;
+//                    #pragma omp parallel for schedule(static) reduction(+: Va_loss)
+//                    //validation误差
+//            for(uint32_t i = 0; i < Va.nr_instance; ++i)
+//                Va_loss += log(1+exp(-Va.Y[i]*F_Va[i]));
+//            Va_loss /= static_cast<double>(Va.nr_instance);
+//            std::cout << Va_loss << std::endl;
+//
+//            printf("%4d %8.1f %10.5f %10.5f\n", t, timer.toc(), Tr_loss, Va_loss);
+//        fflush(stdout);
+//            }
+//	}
 }
 
 float GBDT::predict(float const * const x) const
@@ -438,8 +485,8 @@ std::vector<uint32_t> GBDT::get_indices(float const * const x) const
     std::vector<uint32_t> indices(nr_tree);
     for(uint32_t t = 0; t < nr_tree; ++t)
         indices[t] = trees[t].predict(x).first;//每棵树的预测结果的残差(jly)
-        //indices[t] = trees[t].predict(x).second;//每棵树的预测结果的残差(jly)
-        //indices[t] = GBDT::predict(x);//每棵树的预测结果的残差(jly)
+        //indices[t] = trees[t].predict(x).second;//
+        //indices[t] = GBDT::predict(x);//
     return indices;
 }
 float GBDT::get_result(float const * const  x) const
