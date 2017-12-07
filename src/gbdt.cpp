@@ -38,8 +38,9 @@ struct Location
 //·´Õý¶¼ÊÇÊý×Ö
 struct Meta
 {
-    Meta() : sl(0), s(0), nl(0), n(0), v(0.0f/0.0f) {}//what ??
-    double sl, s;
+    //Meta() : sl(0), s(0), nl(0), n(0), v(0.0f/0.0f) {}//what ??
+    Meta() : sl(0), s(0), nl(0), n(0), v(0.0f) {}//what ??
+    double sl/*sum of residual during scan*/, s/*sum of residual*/;
     uint32_t nl, n;
     float v;
 };
@@ -53,11 +54,12 @@ struct Defender
 
 void scan(
     Problem const &prob,
-    std::vector<Location> const &locations,
+    std::vector<std::vector<Location> > const &locations,
     std::vector<Meta> const &metas0,
     std::vector<Defender> &defenders,
     uint32_t const offset,// first
-    bool const forward)//´ÓÇ°Íùºó »¹ÊÇ´ÓºóÍùÇ°
+    bool const forward,//´ÓÇ°Íùºó »¹ÊÇ´ÓºóÍùÇ°
+    int k)//class id
 {   //nr_field×Ö¶ÎÊý£¬nr_instanceÑù±¾Êý
     uint32_t const nr_field = prob.nr_field;
     uint32_t const nr_instance = prob.nr_instance;
@@ -71,14 +73,15 @@ void scan(
         {
             uint32_t const i = forward? i_bar : nr_instance-i_bar-1;
 
-            Node const &dnode = prob.X[j][i];
-            Location const &location = locations[dnode.i];
+            Node const &dnode = prob.X[j][i];//node ij in sorted X
+            Location const &location = locations[dnode.i][k];
             if(location.shrinked)
                 continue;
 
             //
             uint32_t const f = location.tnode_idx-offset;
             Meta &meta = metas[f];
+            std::cout <<"dnode.v=" << dnode.v<< " meta.v="<< meta.v << std::endl;
 
             if(dnode.v != meta.v)
             {
@@ -162,19 +165,22 @@ uint32_t CART::max_tnodes = static_cast<uint32_t>(pow(2, CART::max_depth+1));//Í
 std::mutex CART::mtx;
 bool CART::verbose = false;
 
-void CART::fit(Problem const &prob, std::vector<float> const &R,
-    std::vector<float> &F1)
+void CART::fit(Problem const &prob, std::vector<std::vector<float> > const &R,//residual
+    std::vector<std::vector<float> > &F1)
 {
     uint32_t const nr_field = prob.nr_field;
 //    uint32_t const nr_sparse_field = prob.nr_sparse_field;
     uint32_t const nr_instance = prob.nr_instance;
+    int K = 3;//prob.nr_class;
 
     //¼ÇÂ¼Ñù±¾µÄÎ»ÖÃ
-    std::vector<Location> locations(nr_instance);
+    std::vector<std::vector<Location> > locations(nr_instance,std::vector<Location>(K));
+    for (int k=0;k<K;k++)
+    {
     #pragma omp parallel for schedule(static)
     //³õÊ¼»¯²Ð²î
     for(uint32_t i = 0; i < nr_instance; ++i)
-        locations[i].r = R[i];
+        locations[i][k].r = R[i][k];
     //°´²ã±éÀú
     for(uint32_t d = 0, offset = 1; d < max_depth; ++d, offset *= 2)
     {
@@ -185,15 +191,15 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
 		std::cout << " metas0[0].s=" <<metas0[0].s <<" metas0[1].s=" <<metas0[1].s <<" metas0[2].s="<< metas0[2].s<< std::endl;
         for(uint32_t i = 0; i < nr_instance; ++i)
         {
-            Location &location = locations[i];
+            Location &location = locations[i][k];
             if(location.shrinked)//initially false
                 continue;
             //Ã¿¸ö½Úµã¾àÀë±¾²ãÊ×½ÚµãµÄÆ«ÒÆ
             Meta &meta = metas0[location.tnode_idx-offset];//initially offset=1, tnode_idx=1
             //ÀÛ¼Ó²Ð²î£¬ÎªºóÃæµÄ¼ÆËã¹«Ê½×ö×¼±¸
             meta.s += location.r;//initially R[i]
-            ++meta.n;//ÓëÖ®Ç°µÄÖµÀÛ¼Ó
-			std::cout << location.tnode_idx << " " <<offset << std::endl;
+            ++meta.n;//ÓëÖ®Ç°µÄÖµÀÛ¼Ó,in order to not concern shrinked
+			std::cout <<"location.tnode_idx="<< location.tnode_idx << " offset=" <<offset << std::endl;
         }
 
 		std::cout << " metas0[0].s=" <<metas0[0].s <<" metas0[1].s=" <<metas0[1].s <<" metas0[2].s="<< metas0[2].s<< std::endl;//some not initialized
@@ -201,22 +207,23 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
         //Ã¿²ã½ÚµãÊý*×Ö¶ÎÊý
         std::vector<Defender> defenders(nr_leaf*nr_field);
 //        std::vector<Defender> defenders_sparse(nr_leaf*nr_sparse_field);
+        //assign defender.ese
         for(uint32_t f = 0; f < nr_leaf; ++f)
         {
-            Meta const &meta = metas0[f];
+            Meta const &meta = metas0[f];//ignore meta, only just metas0
             double const ese = meta.s*meta.s/static_cast<double>(meta.n);
 			std::cout << "ese:" << ese <<std::endl;
             for(uint32_t j = 0; j < nr_field; ++j)
-                defenders[f*nr_field+j].ese = ese;
+                defenders[f*nr_field+j].ese = ese;// some repeat
 //            for(uint32_t j = 0; j < nr_sparse_field; ++j)
 //                defenders_sparse[f*nr_sparse_field+j].ese = ese;
         }
         std::vector<Defender> defenders_inv = defenders;
 
         std::thread thread_f(scan, std::ref(prob), std::ref(locations),
-            std::ref(metas0), std::ref(defenders), offset, true);
+            std::ref(metas0), std::ref(defenders), offset, true,k);
         std::thread thread_b(scan, std::ref(prob), std::ref(locations),
-            std::ref(metas0), std::ref(defenders_inv), offset, false);
+            std::ref(metas0), std::ref(defenders_inv), offset, false,k);
 //        scan_sparse(prob, locations, metas0, defenders_sparse, offset, true);
         thread_f.join();
         thread_b.join();
@@ -246,22 +253,22 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
                     tnode.threshold = defender.threshold;
                 }
             }
-//            for(uint32_t j = 0; j < nr_sparse_field; ++j)
-//            {
-//                Defender defender = defenders_sparse[f*nr_sparse_field+j];
-//                if(defender.ese > best_ese)
-//                {
-//                    best_ese = defender.ese;
-//                    tnode.feature = nr_field + j;
-//                    tnode.threshold = defender.threshold;
-//                }
-//            }
+////            for(uint32_t j = 0; j < nr_sparse_field; ++j)
+////            {
+////                Defender defender = defenders_sparse[f*nr_sparse_field+j];
+////                if(defender.ese > best_ese)
+////                {
+////                    best_ese = defender.ese;
+////                    tnode.feature = nr_field + j;
+////                    tnode.threshold = defender.threshold;
+////                }
+////            }
         }
         //½«Ñù±¾·ÖÅäµ½½ÚµãÖÐ
         #pragma omp parallel for schedule(static)
         for(uint32_t i = 0; i < nr_instance; ++i)
         {
-            Location &location = locations[i];
+            Location &location = locations[i][k];
             if(location.shrinked)
                 continue;
 
@@ -311,8 +318,8 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
     //secondÎª¼ÆËãgamma×ö×¼±¸
     for(uint32_t i = 0; i < nr_instance; ++i)
     {
-        float const r = locations[i].r;
-        uint32_t const tnode_idx = locations[i].tnode_idx;
+        float const r = locations[i][k].r;
+        uint32_t const tnode_idx = locations[i][k].tnode_idx;
         tmp[tnode_idx].first += r;
         tmp[tnode_idx].second += fabs(r)*(1-fabs(r));
     }
@@ -329,7 +336,8 @@ void CART::fit(Problem const &prob, std::vector<float> const &R,
 
     #pragma omp parallel for schedule(static)
     for(uint32_t i = 0; i < nr_instance; ++i)
-        F1[i] = tnodes[locations[i].tnode_idx].gamma;
+        F1[i][k] = tnodes[locations[i][k].tnode_idx].gamma;
+    }
 }
 //Ô¤²âÑù±¾£¬²¢·Öµ½×óÓÒ½Úµã
 std::pair<uint32_t, float> CART::predict(float const * const x) const
@@ -376,7 +384,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 	std::vector<std::vector<float> > Pr_val(Va.nr_instance,std::vector<float>(K,0));
         std::vector<std::vector<float> > y_gradient(Tr.nr_instance, std::vector<float>(K)) ;//or say R ,residual
         //std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
-        std::vector<std::vector<float> > /*R(Tr.nr_instance),*/ F1(Tr.nr_instance, std::vector<float>(K));
+        std::vector<std::vector<float> > /*R(Tr.nr_instance),*/ F1(Tr.nr_instance, std::vector<float>(K));//to be added to F
         int k;
 	for (int m=1;m<M;m++)
 	{
@@ -403,42 +411,35 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 //		        for (k=0;k< K;k++)
 //            		    Pr_val = exp(F_Va[i][k])/sum;
 //                }
-        }
-//                for (k=0;k<K;k++)
-//                {
-//                        for ()
-//                        y_gradient = Tr.Y - Pr_train[]
-//
-//                }
-// 
 
-//                for (k=0;k<K;k++)
-//                {
-//                printf("iter     time    tr_loss    va_loss\n");
-//                for(uint32_t t = 0; t < trees.size(); ++t)
-//                {
-//                    timer.tic();
-//            
-//                    std::vector<float> const &Y = Tr.Y;//in the loop ?
+                    timer.tic();
+
+                    std::vector<float> const &Y = Tr.Y;//in the loop ?
+                for (k=0;k<K;k++)
+                {
+        //        printf("iter     time    tr_loss    va_loss\n");
+                for(uint32_t t = 0; t < trees.size(); ++t)
+                {
+            
 //                    std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
 //            
 //                    #pragma omp parallel for schedule(static)
 //                    //³õÊ¼»¯²Ð²î£¬¼ÆËã¹«Ê½²Î¿¼ÂÛÎÄ
 //                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
 //                        R[i] = static_cast<float>(2*Y[i]/(1+exp(2*Y[i]*F_Tr[i])));
-//            
-//                    trees[t].fit(Tr, R, F1);
+            
+                    trees[t].fit(Tr, y_gradient, F1);
 //                    trees[t].print_tree();
 //            
 //                    double Tr_loss = 0;
 //                    #pragma omp parallel for schedule(static) reduction(+: Tr_loss)
 //                    //log loss
 //                    //YÎªÕæÊµÖµ£¬f_trÎªÑµÁ·Öµ
-//                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
-//                    {
-//                        F_Tr[i] += F_Tr + F1[i];//edit
+                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
+                    {
+                        F_Tr[i][k] += F_Tr[i][k] + F1[i][k];//edit
 //                        Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));//L(y,F)
-//                    }
+                    }
 //                    Tr_loss /= static_cast<double>(Tr.nr_instance);
 //            //        std::cout << "va nrinstance"<< Va.nr_instance << std::endl;
 //            
@@ -461,8 +462,9 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 //
 //            printf("%4d %8.1f %10.5f %10.5f\n", t, timer.toc(), Tr_loss, Va_loss);
 //        fflush(stdout);
-//            }
-//	}
+            }
+        }
+	}
 }
 
 float GBDT::predict(float const * const x) const

@@ -26,13 +26,14 @@ struct Node//has i and v
 //输入样本： 样本数，字段数，稀疏字段数
 struct Problem
 {
-    Problem() : nr_instance(0), nr_field(0){}
+    Problem() : nr_instance(0), nr_field(0), nr_class(3){}
     Problem(uint32_t const nr_instance, uint32_t const nr_field)
         : nr_instance(nr_instance), nr_field(nr_field),// nr_sparse_field(0),
           X(nr_field, std::vector<Node>(nr_instance)),//nr_field x nr_instance
           Z(nr_field, std::vector<Node>(nr_instance)),
           Y(nr_instance) {}//label
-    uint32_t const nr_instance, nr_field;
+    uint32_t const nr_instance, nr_field ;
+    uint32_t nr_class;
 //    uint32_t nr_sparse_field;
     std::vector<std::vector<Node>> X, Z;
     //SI存放稀疏数据，SJ存放稀疏数据下标
