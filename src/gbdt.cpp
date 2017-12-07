@@ -180,7 +180,12 @@ void CART::fit(Problem const &prob, std::vector<std::vector<float> > const &R,//
     #pragma omp parallel for schedule(static)
     //初始化残差
     for(uint32_t i = 0; i < nr_instance; ++i)
+    {
         locations[i][k].r = R[i][k];
+/*        if (R[i][k]!=0) {
+                std::cout <<"here R not zero"<< std::endl;
+        }*/
+    }
     //按层遍历
     for(uint32_t d = 0, offset = 1; d < max_depth; ++d, offset *= 2)
     {
@@ -319,6 +324,7 @@ void CART::fit(Problem const &prob, std::vector<std::vector<float> > const &R,//
     for(uint32_t i = 0; i < nr_instance; ++i)
     {
         float const r = locations[i][k].r;
+        std::cout << "r="<<r<< std::endl;
         uint32_t const tnode_idx = locations[i][k].tnode_idx;
         tmp[tnode_idx].first += r;
         tmp[tnode_idx].second += fabs(r)*(1-fabs(r));
@@ -380,7 +386,7 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
     std::vector<std::vector<float> > F_Tr(Tr.nr_instance, std::vector<float> (K,0)), F_Va(Va.nr_instance, std::vector<float> (K,0));
 //    std::cout << F_Tr[0]<< std::endl;
 
-	std::vector<std::vector<float> > Pr_train(Tr.nr_instance,std::vector<float>(K,0));
+	std::vector<std::vector<double> > Pr_train(Tr.nr_instance,std::vector<double>(K,0));
 	std::vector<std::vector<float> > Pr_val(Va.nr_instance,std::vector<float>(K,0));
         std::vector<std::vector<float> > y_gradient(Tr.nr_instance, std::vector<float>(K)) ;//or say R ,residual
         //std::vector<float> R(Tr.nr_instance), F1(Tr.nr_instance);
@@ -397,9 +403,15 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
                                 sum +=exp(F_Tr[i][k]);
                         }
 		        for (k=0;k< K;k++)
+                        {
             		    Pr_train[i][k] = exp(F_Tr[i][k])/sum;
-                        y_gradient[i][k] = Tr.Y[i] - Pr_train[i][k];
-                        std::cout << "y gradient=" << y_gradient[i][k] << std::endl;
+                            if (sum==0)
+                                    std::cout <<"sum=0";
+                            std::cout << "sum=" << sum << std::endl;
+                            std::cout <<"Pr_train" <<Pr_train[i][k]<<std::endl;
+                            y_gradient[i][k] = Tr.Y[i] - Pr_train[i][k];
+                            std::cout << "y gradient=" << y_gradient[i][k] << std::endl;
+                        }
                 }
 //                for(uint32_t i = 0; i < Va.nr_instance; ++i)
 //                {
@@ -428,16 +440,25 @@ void GBDT::fit(Problem const &Tr, Problem const &Va)
 //                    for(uint32_t i = 0; i < Tr.nr_instance; ++i)
 //                        R[i] = static_cast<float>(2*Y[i]/(1+exp(2*Y[i]*F_Tr[i])));
             
+//                        std::cout << "beforefit "<<y_gradient[0][0]<<std::endl;
                     trees[t].fit(Tr, y_gradient, F1);
+                    std::cout<< "F1:"<< std::endl;
+                    for (int z=0;z<F1.size();z++)
+                    {
+                            for (int n=0;n<F1[0].size();n++)
+                                    std::cout << F1[z][n]<<" ";
+                    }
 //                    trees[t].print_tree();
 //            
 //                    double Tr_loss = 0;
 //                    #pragma omp parallel for schedule(static) reduction(+: Tr_loss)
 //                    //log loss
 //                    //Y为真实值，f_tr为训练值
+                    std::cout <<"===result"<<m<< std::endl;
                     for(uint32_t i = 0; i < Tr.nr_instance; ++i)
                     {
                         F_Tr[i][k] += F_Tr[i][k] + F1[i][k];//edit
+                        std::cout << "F_Tr[i][k]="<<F_Tr[i][k]<< std::endl;
 //                        Tr_loss += log(1+exp(-Y[i]*F_Tr[i]));//L(y,F)
                     }
 //                    Tr_loss /= static_cast<double>(Tr.nr_instance);
